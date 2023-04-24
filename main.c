@@ -68,27 +68,28 @@ void main(void) {
         Vin = (Vin << 8) + ADRESL;      //ADRESHの内容を8bitシフトして16bitペアとして使う
         Vin = Vin / 1023 * 5;           //実際の電圧値への変換
         
-       
+        
+        //分岐設定
         if(Vin < Vth1){                                     //case1
-          //PORTA=0b76543210;
-            PORTA=0b00000001;
+          //PORTA=0b76543210;   //RA1
+            PORTA=0b00000010;   
           //PORTB=0b76543210;
-            PORTB=0b00000001;
+            PORTB=0b00000000;
         }else if(Vin > Vth1 && Vin < Vth2){                 //case2
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b00000001;   //RA0
           //PORTB=0b76543210;
-            PORTB=0b00000001;
+            PORTB=0b00000000;
         }else if(Vin > Vth2 && Vin < Vth3){                 //case2
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b10000000;   //RA7
           //PORTB=0b76543210;
-            PORTB=0b00000001;
+            PORTB=0b00000000;
         }else if(Vin > Vth3 && Vin < Vth4){                 //case4
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b01000000;   //RA6
           //PORTB=0b76543210;
-            PORTB=0b00000001;
+            PORTB=0b00000000;
         }else if(Vin > Vth4 && Vin < Vth5){                 //case5
           //PORTA=0b76543210;
             PORTA=0b00000001;
