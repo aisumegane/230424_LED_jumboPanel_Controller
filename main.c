@@ -12,7 +12,7 @@
 // CONFIG1
 #pragma config FOSC = INTOSC    // Oscillator Selection (INTOSC oscillator: I/O function on CLKIN pin)
 #pragma config WDTE = OFF       // Watchdog Timer Enable (WDT disabled)
-#pragma config PWRTE = OFF      // Power-up Timer Enable (PWRT disabled)
+#pragma config PWRTE = ON      // Power-up Timer Enable (PWRT disabled)
 #pragma config MCLRE = ON       // MCLR Pin Function Select (MCLR/VPP pin function is MCLR)
 #pragma config CP = OFF         // Flash Program Memory Code Protection (Program memory code protection is disabled)
 #pragma config CPD = OFF        // Data Memory Code Protection (Data memory code protection is disabled)
@@ -39,92 +39,94 @@
 //プロトタイプ宣言
 void init(void);
 void ADConversion(void);
-//???????
-unsigned  Vin=0;
 
 //ロータリースイッチの閾値判定
-float Vth1 = 1.0f / 11.0f;
-float Vth2 = 2.0f / 11.0f;
-float Vth3 = 3.0f / 11.0f;
-float Vth4 = 4.0f / 11.0f;
-float Vth5 = 5.0f / 11.0f;
-float Vth6 = 6.0f / 11.0f;
-float Vth7 = 7.0f / 11.0f;
-float Vth8 = 8.0f / 11.0f;
-float Vth9 = 9.0f / 11.0f;
-float Vth10 = 10.0f / 11.0f;
+const float  VCC = 5;
+const float Input_division = 10.0f;    //floatと一緒に計算したらfloat値として代入される(この変数自体はint範囲でよい．) -> X
+const float Input_accuracy = 0.3f;
+const float Input_resolution = Input_accuracy * 1.0f / Input_division;   //入力値の振れ幅設定．キャストが必要になるとconstが外れるので全部型は統一した方が良い. 
 
+const float Vth1 = VCC * 1.0f / Input_division;
+const float Vth2 = VCC * 2.0f / Input_division;
+const float Vth3 = VCC * 3.0f / Input_division;
+const float Vth4 = VCC * 4.0f / Input_division;
+const float Vth5 = VCC * 5.0f / Input_division;             // = 2.5V
+const float Vth6 = VCC * 6.0f / Input_division;
+const float Vth7 = VCC * 7.0f / Input_division;
+const float Vth8 = VCC * 8.0f / Input_division;
+const float Vth9 = VCC * 9.0f / Input_division;
+const float Vth10 = VCC * 10.0f / Input_division;           // = 5.0V
 
 void main(void) {
-    int RA[11]={0,0,0,0,0,0,0,0,0,0.0};
-    int i;
+    unsigned short Vin_ADRES=0;
+    float Vin=0;
     
     init();
     
     //main関数無限ループ
     while(1){
         ADConversion();                 //A/D変換実行
-        Vin = ADRESH;
-        Vin = (Vin << 8) + ADRESL;      //ADRESHの内容を8bitシフトして16bitペアとして使う
-        Vin = Vin / 1023 * 5;           //実際の電圧値への変換
+        Vin_ADRES = ADRESH;
+        Vin_ADRES = (Vin_ADRES << 8) + ADRESL;      //ADRESHの内容を8bitシフトして16bitペアとして使う
+        Vin = (float)Vin_ADRES / 1023.0f * 5.0f;           //実際の電圧値への変換
         
         
         //分岐設定
-        if(Vin < Vth1){                                     //case1
+        if(Vin < Input_resolution ){                                     //case0
           //PORTA=0b76543210;   //RA1
-            PORTA=0b00000010;   
+            PORTA=0b00000000;   
           //PORTB=0b76543210;
             PORTB=0b00000000;
-        }else if(Vin > Vth1 && Vin < Vth2){                 //case2
+        }else if(Vin > (Vth1 - Input_resolution)  && Vin < (Vth1 + Input_resolution) ){                 //case1
           //PORTA=0b76543210;
-            PORTA=0b00000001;   //RA0
+            PORTA=0b00000010;
           //PORTB=0b76543210;
-            PORTB=0b00000000;
-        }else if(Vin > Vth2 && Vin < Vth3){                 //case2
+            PORTB=0b01110000;
+        }else if(Vin > (Vth2 - Input_resolution)  && Vin < (Vth2 + Input_resolution) ){                 //case2
           //PORTA=0b76543210;
-            PORTA=0b10000000;   //RA7
+            PORTA=0b00000001;   //RA7
           //PORTB=0b76543210;
-            PORTB=0b00000000;
-        }else if(Vin > Vth3 && Vin < Vth4){                 //case4
+            PORTB=0b01110000;
+        }else if(Vin > (Vth3 - Input_resolution)  && Vin < (Vth3 + Input_resolution) ){                 //case3
           //PORTA=0b76543210;
-            PORTA=0b01000000;   //RA6
+            PORTA=0b10000000;
           //PORTB=0b76543210;
-            PORTB=0b00000000;
-        }else if(Vin > Vth4 && Vin < Vth5){                 //case5
+            PORTB=0b01110000;
+        }else if(Vin > (Vth4 - Input_resolution)  && Vin < (Vth4 + Input_resolution) ){                 //case4
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b01000000;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
-        }else if(Vin > Vth5 && Vin < Vth6){                 //case6
+            PORTB=0b01110000;
+        }else if(Vin > (Vth5 - Input_resolution)  && Vin < (Vth5 + Input_resolution) ){                 //case5
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b00000000;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
-        }else if(Vin > Vth6 && Vin < Vth7){                 //case7
+            PORTB=0b11110000;
+        }else if(Vin > (Vth6 - Input_resolution)  && Vin < (Vth6 + Input_resolution) ){                 //case6
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b11000011;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
-        }else if(Vin > Vth7 && Vin < Vth8){                 //case8
+            PORTB=0b11000000;
+        }else if(Vin > (Vth7 - Input_resolution)  && Vin < (Vth7 + Input_resolution) ){                 //case7
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b11000011;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
-        }else if(Vin > Vth8 && Vin < Vth9){                 //case9
+            PORTB=0b10100000;
+        }else if(Vin > (Vth8 - Input_resolution)  && Vin < (Vth8 + Input_resolution) ){                 //case8
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b11000011;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
-        }else if(Vin > Vth9 && Vin < Vth10){                //case10
+            PORTB=0b10010000;
+        }else if(Vin > (Vth9 - Input_resolution)  && Vin < (Vth9 + Input_resolution) ){                //case9
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b11000011;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
-        }else if(Vin > Vth10){                              //case11
+            PORTB=0b11010000;
+        }else if(Vin > (Vth10 - Input_resolution) ){                              //case10
           //PORTA=0b76543210;
-            PORTA=0b00000001;
+            PORTA=0b11000011;
           //PORTB=0b76543210;
-            PORTB=0b00000001;
+            PORTB=0b11110000;
         }
     }
 }
@@ -136,16 +138,15 @@ void ADConversion(void){
 }
 
 void init(void){
-    OSCCON = 0b01110000;   //datasheet_P67_??????? 8MHz
+    OSCCON = 0b01110000;   //datasheet_P678MHz
     
-    ANSELA = 0b00000100;   //datasheet_P122 1??????????? -> 1??????????????
-    ANSELB = 0b00000000;   //datasheet_P128 B???????????
-    TRISA  = 0b00000100;    //datasheet_P120 ??????????????????????TRIS????A1??A2???????????????? -> ??1??(RA2)???????
+    ANSELA = 0b00000100;   //datasheet_P122
+    ANSELB = 0b00000000;   //datasheet_P128
+    TRISA  = 0b00100100;    //datasheet_P120
     TRISB  = 0b00000000;
-    PORTA  = 0b00000000;    //?????????????datasheet_P119 PORTA(RA0?RA7)?0????
-    PORTB  = 0b00000000;    //?????????????PORTB??????
+    PORTA  = 0b00000000;    //datasheet_P119
+    PORTB  = 0b00000000;    //PORTB
     
-    ADCON0 = 0b00001001;    //datasheet_P143 A/D????????
-    //ADCON1 = 0b10100100;    //????????????????????
+    ADCON0 = 0b00001001;    //datasheet_P143
     ADCON1 = 0b11010000;    //Device Frequency(FSOC)が4MHzの時は1.0us、2.0us、4.0usしか選択できない。
 }
